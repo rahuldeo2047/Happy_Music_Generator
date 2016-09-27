@@ -26,7 +26,7 @@ def get_songs(path):
             raise e           
     return songs
 
-songs = get_songs('Pop_Music_Midi') #These songs have already been converted from midi to msgpack
+songs = get_songs('Happy_Music_Midi') #These songs have already been converted from midi to msgpack
 print "{} songs processed".format(len(songs))
 ###################################################
 
@@ -122,11 +122,23 @@ with tf.Session() as sess:
 
     #Now the model is fully trained, so let's make some music! 
     #Run a gibbs chain where the visible nodes are initialized to 0
+    j = 0
     sample = gibbs_sample(1).eval(session=sess, feed_dict={x: np.zeros((10, n_visible))})
     for i in range(sample.shape[0]):
         if not any(sample[i,:]):
             continue
+        j=j+1
         #Here we reshape the vector to be time x notes, and then save the vector as a midi file
         S = np.reshape(sample[i,:], (num_timesteps, 2*note_range))
         midi_manipulation.noteStateMatrixToMidi(S, "generated_chord_{}".format(i))
-            
+        
+    S = []
+    for i in range(sample.shape[0]):
+        if not any(sample[i,:]):
+            continue
+        #Here we reshape the vector to be time x notes, and then save the vector as a midi file
+        S.append( np.reshape(sample[i,:], (num_timesteps, 2*note_range)) )
+    
+    S = np.reshape(S, (num_timesteps, 2*note_range+j))     
+    midi_manipulation.noteStateMatrixToMidi(S, "generated_chord_All.mid")
+        
